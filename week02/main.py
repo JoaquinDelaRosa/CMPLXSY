@@ -9,14 +9,25 @@ class CellularAutomata:
         self.shape = self.lattice.shape
         self.states = [0, 1]
 
+        self.n_radius = 3
+        self.kernel = self.get_kernel()
+        self.p = 2.0/9.0
+        self.q = 3.0/9.0
+
+
     def initialize_random(self):
         self.lattice = np.random.choice(self.states, self.shape[0] * self.shape[1]).reshape(*self.shape)
 
 
     def get_neighborhood(self, lattice : np.ndarray, x, y) -> np.ndarray:
         (l, w) = lattice.shape
-        return np.array([lattice[(x + i) % l][(y + j) % w] for i in range(-1, 1 + 1) for j in range(-1, 1 + 1) if not (i == 0 and j == 0)])
+        return np.array([lattice[(x + i) % l][(y + j) % w] for i in range(-self.n_radius, self.n_radius + 1) 
+            for j in range(-self.n_radius, self.n_radius + 1)])
 
+    def get_kernel(self):
+        kernel =np.random.uniform(0, 1, size=(2 * self.n_radius + 1) * (2 * self.n_radius + 1))
+        return kernel / np.sum(kernel)
+    
     def update(self):
         self.buffer = np.ndarray.copy(self.lattice)
         shape = self.buffer.shape
@@ -25,20 +36,12 @@ class CellularAutomata:
             for y in range(shape[1]):
                 curr = self.buffer[x][y]
                 neighbors = self.get_neighborhood(self.buffer, x, y)
-                alive_count = neighbors.sum()
+                u = np.dot(neighbors, self.kernel)
 
-                if curr == 0:
-                    if alive_count == 3:
-                        self.lattice[x][y] = 1
-                    else:
-                        self.lattice[x][y] = 0
+                if u > self.p and u < self.q:
+                    self.lattice[x][y] = 1
                 else:
-                    if alive_count < 2:
-                        self.lattice[x][y] = 0
-                    elif alive_count > 3:
-                        self.lattice[x][y] = 0
-                    else:
-                        self.lattice[x][y] = 1 
+                    self.lattice[x][y] = 0
 
     def __str__(self):
         return str(self.lattice)
@@ -60,8 +63,10 @@ class Renderer:
         plt.show() 
 
 def main():
-    automata : CellularAutomata = CellularAutomata(200, 200)
+    automata : CellularAutomata = CellularAutomata(100, 100)
     automata.initialize_random()
+
+    print ("Kernel Used \n", automata.kernel)
 
     renderer : Renderer = Renderer(automata)
 
@@ -71,4 +76,3 @@ def main():
 
 if __name__ == "__main__":
     main()    
-
