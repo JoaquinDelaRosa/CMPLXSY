@@ -9,10 +9,10 @@ class CellularAutomata:
         self.shape = self.lattice.shape
         self.states = [0, 1]
 
-        self.n_radius = 3
+        self.n_radius = 5
         self.kernel = self.get_kernel()
-        self.p = 2.0/9.0
-        self.q = 3.0/9.0
+        self.p = 0.2
+        self.q = 0.4
 
 
     def initialize_random(self):
@@ -34,7 +34,6 @@ class CellularAutomata:
 
         for x in range(shape[0]):
             for y in range(shape[1]):
-                curr = self.buffer[x][y]
                 neighbors = self.get_neighborhood(self.buffer, x, y)
                 u = np.dot(neighbors, self.kernel)
 
