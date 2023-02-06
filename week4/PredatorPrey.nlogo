@@ -41,7 +41,7 @@ to initialize-preys
   create-preys prey_count
   ask preys [
     set energy_in_ticks 5 * food_satiation
-    set shape "bug"
+    set shape "mouse top"
     set size 2
     set color white
     setxy random-pxcor random-pycor
@@ -53,7 +53,7 @@ to initialize-predators
   create-predators predator_count
   ask predators [
     set energy_in_ticks 5 * prey_satiation
-    set shape "spider"
+    set shape "cat"
     set size 2
     set color red
     setxy random-pxcor random-pycor
@@ -271,7 +271,7 @@ food_growth_ticks
 food_growth_ticks
 0
 100
-30.0
+100.0
 1
 1
 NIL
@@ -553,6 +553,35 @@ Circle -16777216 true false 30 180 90
 Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
+
+cat
+false
+0
+Line -7500403 true 285 240 210 240
+Line -7500403 true 195 300 165 255
+Line -7500403 true 15 240 90 240
+Line -7500403 true 285 285 195 240
+Line -7500403 true 105 300 135 255
+Line -16777216 false 150 270 150 285
+Line -16777216 false 15 75 15 120
+Polygon -7500403 true true 300 15 285 30 255 30 225 75 195 60 255 15
+Polygon -7500403 true true 285 135 210 135 180 150 180 45 285 90
+Polygon -7500403 true true 120 45 120 210 180 210 180 45
+Polygon -7500403 true true 180 195 165 300 240 285 255 225 285 195
+Polygon -7500403 true true 180 225 195 285 165 300 150 300 150 255 165 225
+Polygon -7500403 true true 195 195 195 165 225 150 255 135 285 135 285 195
+Polygon -7500403 true true 15 135 90 135 120 150 120 45 15 90
+Polygon -7500403 true true 120 195 135 300 60 285 45 225 15 195
+Polygon -7500403 true true 120 225 105 285 135 300 150 300 150 255 135 225
+Polygon -7500403 true true 105 195 105 165 75 150 45 135 15 135 15 195
+Polygon -7500403 true true 285 120 270 90 285 15 300 15
+Line -7500403 true 15 285 105 240
+Polygon -7500403 true true 15 120 30 90 15 15 0 15
+Polygon -7500403 true true 0 15 15 30 45 30 75 75 105 60 45 15
+Line -16777216 false 164 262 209 262
+Line -16777216 false 223 231 208 261
+Line -16777216 false 136 262 91 262
+Line -16777216 false 77 231 92 261
 
 circle
 false
