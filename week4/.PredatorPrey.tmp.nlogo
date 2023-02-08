@@ -41,7 +41,7 @@ to initialize-preys
   create-preys prey_count
   ask preys [
     set energy_in_ticks 5 * food_satiation
-    set shape "bug"
+    set shape "mouse top"
     set size 2
     set color white
     setxy random-pxcor random-pycor
@@ -53,7 +53,7 @@ to initialize-predators
   create-predators predator_count
   ask predators [
     set energy_in_ticks 5 * prey_satiation
-    set shape "spider"
+    set shape "cat"
     set size 2
     set color red
     setxy random-pxcor random-pycor
@@ -62,6 +62,7 @@ to initialize-predators
 end
 
 to go
+  if ticks >= 500 [ stop ]
   update-display-patches
   update-patches
   update-preys
@@ -129,7 +130,7 @@ to update-predators
         set energy_in_ticks (energy_in_ticks + prey_satiation)
       ]
       [
-        if-else ticks_alive > predator_maturity_age and energy_in_ticks > predator_reproduction_cost and bernoulli-trial predator_reproduction_probability
+        if-else ticks_alive >= predator_maturity_age and energy_in_ticks > predator_reproduction_cost and bernoulli-trial predator_reproduction_probability
         [
           hatch-predators 1
           set energy_in_ticks (energy_in_ticks - predator_reproduction_cost)
@@ -183,6 +184,17 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
+MONITOR
+0
+0
+0
+0
+NIL
+NIL
+17
+1
+11
+
 BUTTON
 109
 85
@@ -201,10 +213,10 @@ NIL
 1
 
 BUTTON
-114
-149
-177
-182
+109
+128
+172
+161
 go
 go
 T
@@ -218,15 +230,15 @@ NIL
 1
 
 SLIDER
-661
-34
-833
-67
+658
+50
+830
+83
 predator_count
 predator_count
 0
 100
-10.0
+100.0
 1
 1
 NIL
@@ -248,40 +260,40 @@ NIL
 HORIZONTAL
 
 SLIDER
-654
-157
-826
-190
+659
+146
+831
+179
 initial_food_density
 initial_food_density
 0
 1
-0.8
+0.85
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-653
-226
-825
-259
+659
+194
+831
+227
 food_growth_ticks
 food_growth_ticks
 0
 100
-50.0
+100.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-64
-503
-236
-536
+67
+471
+239
+504
 max_arc_turn
 max_arc_turn
 0
@@ -293,10 +305,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-63
-552
-235
-585
+67
+514
+239
+547
 max_prey_step_size
 max_prey_step_size
 0
@@ -308,40 +320,40 @@ NIL
 HORIZONTAL
 
 SLIDER
-255
-470
-427
-503
+272
+471
+444
+504
 food_satiation
 food_satiation
 0
 100
-6.0
+3.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-259
-519
-468
-552
+272
+515
+481
+548
 prey_reproduction_probability
 prey_reproduction_probability
 0
 1
-0.05
+0.0
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-257
-570
-429
-603
+273
+562
+445
+595
 prey_reproduction_cost
 prey_reproduction_cost
 0
@@ -354,9 +366,9 @@ HORIZONTAL
 
 SLIDER
 528
-481
+470
 700
-514
+503
 prey_satiation
 prey_satiation
 0
@@ -368,10 +380,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-527
-525
-754
-558
+528
+517
+755
+550
 predator_reproduction_probability
 predator_reproduction_probability
 0
@@ -383,15 +395,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-512
-573
-706
-606
+527
+564
+721
+597
 predator_reproduction_cost
 predator_reproduction_cost
 0
 200
-109.0
+110.0
 1
 1
 NIL
@@ -417,10 +429,10 @@ PENS
 "predators" 1.0 0 -5298144 true "" "plot count predators"
 
 SLIDER
-61
-607
-239
-640
+62
+558
+240
+591
 max_predator_step_size
 max_predator_step_size
 0
@@ -433,9 +445,9 @@ HORIZONTAL
 
 SLIDER
 528
-627
+608
 700
-660
+641
 predator_maturity_age
 predator_maturity_age
 2
@@ -447,10 +459,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-265
-625
-437
-658
+274
+608
+446
+641
 prey_maturity_age
 prey_maturity_age
 2
@@ -460,6 +472,39 @@ prey_maturity_age
 1
 NIL
 HORIZONTAL
+
+MONITOR
+93
+175
+173
+220
+Food Count
+count patches with [pcolor = green]
+17
+1
+11
+
+MONITOR
+95
+229
+173
+274
+Prey Count
+count preys
+17
+1
+11
+
+MONITOR
+74
+282
+175
+327
+Predator Count
+count predators
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -553,6 +598,35 @@ Circle -16777216 true false 30 180 90
 Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
+
+cat
+false
+0
+Line -7500403 true 285 240 210 240
+Line -7500403 true 195 300 165 255
+Line -7500403 true 15 240 90 240
+Line -7500403 true 285 285 195 240
+Line -7500403 true 105 300 135 255
+Line -16777216 false 150 270 150 285
+Line -16777216 false 15 75 15 120
+Polygon -7500403 true true 300 15 285 30 255 30 225 75 195 60 255 15
+Polygon -7500403 true true 285 135 210 135 180 150 180 45 285 90
+Polygon -7500403 true true 120 45 120 210 180 210 180 45
+Polygon -7500403 true true 180 195 165 300 240 285 255 225 285 195
+Polygon -7500403 true true 180 225 195 285 165 300 150 300 150 255 165 225
+Polygon -7500403 true true 195 195 195 165 225 150 255 135 285 135 285 195
+Polygon -7500403 true true 15 135 90 135 120 150 120 45 15 90
+Polygon -7500403 true true 120 195 135 300 60 285 45 225 15 195
+Polygon -7500403 true true 120 225 105 285 135 300 150 300 150 255 135 225
+Polygon -7500403 true true 105 195 105 165 75 150 45 135 15 135 15 195
+Polygon -7500403 true true 285 120 270 90 285 15 300 15
+Line -7500403 true 15 285 105 240
+Polygon -7500403 true true 15 120 30 90 15 15 0 15
+Polygon -7500403 true true 0 15 15 30 45 30 75 75 105 60 45 15
+Line -16777216 false 164 262 209 262
+Line -16777216 false 223 231 208 261
+Line -16777216 false 136 262 91 262
+Line -16777216 false 77 231 92 261
 
 circle
 false

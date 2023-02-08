@@ -62,6 +62,7 @@ to initialize-predators
 end
 
 to go
+  if ticks >= 500 [ stop ]
   update-display-patches
   update-patches
   update-preys
@@ -226,7 +227,7 @@ predator_count
 predator_count
 0
 100
-50.0
+100.0
 1
 1
 NIL
@@ -256,7 +257,7 @@ initial_food_density
 initial_food_density
 0
 1
-0.8
+0.85
 0.01
 1
 NIL
@@ -331,7 +332,7 @@ prey_reproduction_probability
 prey_reproduction_probability
 0
 1
-0.05
+0.0
 0.01
 1
 NIL
@@ -376,7 +377,7 @@ predator_reproduction_probability
 predator_reproduction_probability
 0
 1
-0.14
+0.15
 0.01
 1
 NIL
@@ -391,7 +392,7 @@ predator_reproduction_cost
 predator_reproduction_cost
 0
 200
-109.0
+110.0
 1
 1
 NIL
@@ -460,6 +461,39 @@ prey_maturity_age
 1
 NIL
 HORIZONTAL
+
+MONITOR
+43
+254
+123
+299
+Food Count
+count patches with [pcolor = green]
+17
+1
+11
+
+MONITOR
+42
+314
+120
+359
+Prey Count
+count preys
+17
+1
+11
+
+MONITOR
+43
+374
+144
+419
+Predator Count
+count predators
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
