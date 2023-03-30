@@ -1,3 +1,10 @@
+globals [
+   CAR_SIZE
+   BUS_SIZE
+   MOTOR_SIZE
+   BIKE_SIZE
+]
+
 breed [actors actor]
 breed [cars car]
 breed [buses bus]          ; TODO: Add behavior to allow multiple actors to board the bus
@@ -77,8 +84,16 @@ patches-own [
 to setup
   clear-all
   reset-ticks
+  setup-globals
   configure-lanes
   initialize-actors
+end
+
+to setup-globals
+  set CAR_SIZE 2
+  set BUS_SIZE 3
+  set MOTOR_SIZE 1.5
+  set BIKE_SIZE 1.25
 end
 
 to configure-lanes
@@ -242,8 +257,10 @@ to spawn-car [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
-    set c self
 
+    set size CAR_SIZE
+
+    set c self
    ]
       set vehicle c
       set available? false
@@ -269,10 +286,12 @@ to spawn-bus [l a]
     set impatience min list impatience 1
     set impatience max list impatience 0
 
-
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
 
+    set size BUS_SIZE
+
     set c self
+
 
    ]
 
@@ -311,10 +330,11 @@ to spawn-motor [l a]
     set impatience min list impatience 1
     set impatience max list impatience 0
 
-    set c self
-
-
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+
+    set size MOTOR_SIZE
+
+    set c self
 
    ]
       set vehicle c
@@ -342,6 +362,9 @@ to spawn-bike [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+
+    set size BIKE_SIZE
+
     set c self
 
    ]
@@ -406,7 +429,6 @@ end
 
 to update-movements
   ask cars [
-    ; Check your sped
     check-metrics CAR_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
 
     maneuver
@@ -419,7 +441,6 @@ to update-movements
   ]
 
   ask buses [
-    ; Check your sped
     check-metrics BUS_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
 
     maneuver
@@ -431,7 +452,6 @@ to update-movements
   ]
 
   ask motors [
-     ; Check your sped
      check-metrics MOTOR_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
 
      maneuver
@@ -442,7 +462,7 @@ to update-movements
   ]
 
   ask bikes [
-    check-metrics BIKE_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
+     check-metrics BIKE_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
 
      maneuver
      adjust-speed BIKE_SPEED_LIMIT
@@ -505,7 +525,8 @@ to adjust-speed [max_speed]
     [
     ; Policy: Slow down when there's a car close to you.
     ; Policy: Speed up when the car in front of you is far enough.
-    let dist [distance myself] of adjacent
+    let dist [distance myself] of adjacent - size - [size] of adjacent
+
     if-else dist < CLOSENESS_THRESHOLD
     [
       if-else dist > TOO_CLOSE_THRESHOLD
@@ -1101,7 +1122,7 @@ LANE_WIDTH
 LANE_WIDTH
 0
 5
-2.0
+4.0
 1
 1
 NIL
