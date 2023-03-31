@@ -43,36 +43,41 @@ actors-own [
 
 cars-own [
   speed   ; the current speed of this vehicle
+  targety ; the current target ycoord of this vehicle
   lane    ; the current lane this car is traversing
   impatience; a probability that determines if they switch lanes
   impatience_threshold ; the threshld for triggering the impatience mechanics
+  delta_impatience ; the last time an impatience check was not run
   jam_time ; the time this vehicle was jammed
-  comfort ; whether or not this vehicle was safe during the trip (quantified as the number of vehicles that were too close to this vehicl)
+  comfort ; whether or not this vehicle was safe during the trip (quantified as the number of vehicles that were too close to this vehicle)
 ]
 
 buses-own [
   speed
-  lane
+  targety
   impatience
   impatience_threshold
+  delta_impatience
   jam_time
   comfort
 ]
 
 motors-own [
   speed
-  lane
+  targety
   impatience
   impatience_threshold
+  delta_impatience
   jam_time
   comfort
 ]
 
 bikes-own [
   speed
-  lane
+  targety
   impatience
   impatience_threshold
+  delta_impatience
   jam_time
   comfort
 ]
@@ -246,10 +251,10 @@ to spawn-car [l a]
     set shape "car"
     set color blue
     set speed 1
-    set lane l
+    set targety get-lane-center l
+    set ycor targety
 
-    set ycor get-lane-center lane
-    set xcor min-pxcor; Do this so it starts in the correct spot.
+    set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
@@ -257,6 +262,7 @@ to spawn-car [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+    set delta_impatience ticks
 
     set size CAR_SIZE
 
@@ -276,10 +282,11 @@ to spawn-bus [l a]
     set shape "car"
     set color red
     set speed 1
-    set lane l
 
-    set ycor get-lane-center lane
-    set xcor min-pxcor; Do this so it starts in the correct spot.
+    set targety get-lane-center l
+    set ycor targety
+
+    set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
@@ -287,6 +294,7 @@ to spawn-bus [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+    set delta_impatience ticks
 
     set size BUS_SIZE
 
@@ -320,10 +328,11 @@ to spawn-motor [l a]
     set shape "car"
     set color green
     set speed 1
-    set lane l
 
-    set ycor get-lane-center lane
-    set xcor min-pxcor; Do this so it starts in the correct spot.
+    set targety get-lane-center l
+    set ycor targety
+
+    set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal (AVERAGE_IMPATIENCE + 0.25 )  0.1 ; Set impatience. Have a stddev of 0.1
@@ -331,6 +340,7 @@ to spawn-motor [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+    set delta_impatience ticks
 
     set size MOTOR_SIZE
 
@@ -351,10 +361,11 @@ to spawn-bike [l a]
     set shape "car"
     set color orange
     set speed 1
-    set lane l
 
-    set ycor get-lane-center lane
-    set xcor min-pxcor; Do this so it starts in the correct spot.
+    set targety get-lane-center l
+    set ycor targety
+
+    set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
@@ -362,6 +373,7 @@ to spawn-bike [l a]
     set impatience max list impatience 0
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
+    set delta_impatience ticks
 
     set size BIKE_SIZE
 
@@ -430,51 +442,36 @@ end
 to update-movements
   ask cars [
     check-metrics CAR_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
-
     maneuver
-
     adjust-speed CAR_SPEED_LIMIT
     fd speed
-
-    ; Try to perform an overtake here
-    switch-lane
   ]
 
   ask buses [
     check-metrics BUS_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
-
     maneuver
-
     adjust-speed BUS_SPEED_LIMIT
     fd speed
-
-    switch-lane
   ]
 
   ask motors [
      check-metrics MOTOR_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
-
      maneuver
      adjust-speed MOTOR_SPEED_LIMIT
-
      fd speed
-     switch-lane
   ]
 
   ask bikes [
      check-metrics BIKE_SPEED_LIMIT * JAM_THRESHOLD_COEFFICIENT
-
      maneuver
      adjust-speed BIKE_SPEED_LIMIT
-
      fd speed
-     ; Bikes cannot overtake
   ]
 end
 
 to update-comforts
   ask cars [
-    let adj min-one-of other turtles with [breed != actors and lane = [lane] of myself] [distance myself]
+    let adj min-one-of other turtles with [breed != actors] [distance myself]
     if adj != nobody [
       let c [distance myself] of adj
       set comfort comfort + (1 - 1.0 / (c + 1 )) * CAR_COMFORT
@@ -488,7 +485,7 @@ to update-comforts
   ]
 
   ask motors [
-    let adj min-one-of other turtles with [breed != actors and lane = [lane] of myself] [distance myself]
+    let adj min-one-of other turtles with [breed != actors] [distance myself]
     if adj != nobody [
       let c [distance myself] of adj
       set comfort comfort + (1 - 1.0 / (c + 1 )) * MOTOR_COMFORT
@@ -496,7 +493,7 @@ to update-comforts
   ]
 
   ask bikes [
-    let adj min-one-of other turtles with [breed != actors and lane = [lane] of myself] [distance myself]
+    let adj min-one-of other turtles with [breed != actors] [distance myself]
     if adj != nobody [
       let c [distance myself] of adj
       set comfort comfort + (1 - 1.0 / (c + 1 ) ) * BIKE_COMFORT
@@ -513,8 +510,7 @@ end
 to adjust-speed [max_speed]
     let adjacent min-one-of other turtles with
     [
-      xcor > [xcor] of myself and
-      lane = [lane] of myself
+      xcor > [xcor] of myself
     ] [distance myself]
 
     if-else adjacent = nobody
@@ -527,11 +523,9 @@ to adjust-speed [max_speed]
     ; Policy: Speed up when the car in front of you is far enough.
     let dist [distance myself] of adjacent - size - [size] of adjacent
 
-    if-else dist < CLOSENESS_THRESHOLD
+    if-else dist < TOO_CLOSE_THRESHOLD
     [
-      if-else dist > TOO_CLOSE_THRESHOLD
-      [ set speed speed - 0.05 * dist ]
-      [ set speed 0]
+      set speed 0
     ]
     [
      set speed speed + 0.1 * dist
@@ -545,72 +539,49 @@ to adjust-speed [max_speed]
 end
 
 to maneuver
+    ; Perform any switching as necessary. Note, only do this when you are at least 2 * CLOSENESS_THRESHOLD distance away from the left.
+    ; This is because, otherwise you will keep trying to switch
+    if xcor - min-pxcor >= 10  [
+      try-switch
+    ]
+
     ; Begin any maneuvers
-    let target get-lane-center lane
+    let target targety
     facexy xcor + speed target
 
-    if [pycor] of patch-here = target
-    [
-      set lane lane_no
-      set heading 90
-    ]
+
 end
 
-to switch-lane
+to try-switch
+  let adjacent one-of other turtles in-cone (4 * CLOSENESS_IMPATIENCE_THRESHOLD) 20 with [xcor > [xcor] of myself]
+  if adjacent != nobody [
+    let dist [distance myself] of adjacent
+    set dist (dist - size - [size] of adjacent) / dist
 
-  let ahead min-one-of other turtles with
-    [xcor < [xcor] of myself + CLOSENESS_THRESHOLD and
-      xcor > [xcor] of myself and
-      lane = [lane] of myself
-    ] [ distance myself]
-
-    if ahead != nobody [
-      let target_lane get-target-lane lane
-
-    if target_lane != lane [
-    ; Policy: Make sure it's actually safe to switch lanes
-    let adjacent min-one-of other turtles with
-    [
-      breed != actors and
-      lane = target_lane
-    ] [distance myself]
-
-    if-else adjacent = nobody [
-      set lane target_lane
-    ] [
-        if [distance myself] of adjacent > CLOSENESS_THRESHOLD [
-        ; Decide here
-        let decision sigmoid impatience_threshold  IMPATIENCE_THRESHOLD_DEGREE ticks
-        if decision < impatience
-          [set lane target_lane]
+    if dist <= CLOSENESS_IMPATIENCE_THRESHOLD [
+      let decision sigmoid  delta_impatience IMPATIENCE_THRESHOLD_DEGREE impatience_threshold
+      let p make-decision
+      if-else p < decision [
+        if-else [pycor] of adjacent < pycor [
+          set targety pycor + 1
+        ] [
+          set targety pycor - 1
         ]
+
+        ; Make sure to cap the ycor to be just on the road itself
+        let total_lanes NUM_LANES + SPECIAL_LANES_TOP + SPECIAL_LANES_BOTTOM
+        let lower max-pycor + LANE_WIDTH / 2 - (total_lanes) * LANE_WIDTH + 1
+        let upper max-pycor - LANE_WIDTH
+
+        set targety min list targety upper
+        set targety max list targety lower
+
+        set speed speed + 0.2 * dist
+      ] [
+        set delta_impatience ticks
+      ]
     ]
-    ]
   ]
-end
-
-to-report get-target-lane [current_lane ]
-  let target_lane 0
-  if current_lane  = 0
-   [ set target_lane current_lane  + 1]
-  if current_lane  = NUM_LANES + SPECIAL_LANES_TOP + SPECIAL_LANES_BOTTOM - 1
-   [ set target_lane current_lane  - 1]
-  if current_lane  > 0 and current_lane  < NUM_LANES - 1 [
-    let d make-decision
-    if-else d < LEFT_LANE_SWITCH_PRIORITY
-   [set target_lane current_lane  - 1 ]
-   [set target_lane current_lane + 1 ]
-   ]
-
-
-  ; Policy: Make sure it's legal to switch lans
-  if target_lane < SPECIAL_LANES_TOP and ALLOW_OVERTAKE_TOP? = false and [breed] of self != buses [
-    report current_lane
-  ]
-  if target_lane >= NUM_LANES + SPECIAL_LANES_TOP AND ALLOW_OVERTAKE_BOTTOM? = false and [breed] of self != bikes[
-    report current_lane
-  ]
-  report target_lane
 end
 
 to run-next-epoch
@@ -699,6 +670,10 @@ end
 
 to-report get-lane-center [x]
   report max-pycor - (x + 1) * LANE_WIDTH
+end
+
+to-report get-lane [y]
+  report 1
 end
 
 to-report sigmoid [x a t0]
@@ -808,15 +783,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-233
-194
-266
-CLOSENESS_THRESHOLD
-CLOSENESS_THRESHOLD
+1025
+570
+1283
+603
+CLOSENESS_IMPATIENCE_THRESHOLD
+CLOSENESS_IMPATIENCE_THRESHOLD
 0
 10
-3.4
+2.1
 0.1
 1
 NIL
@@ -846,7 +821,7 @@ SPAWN_PERIOD
 SPAWN_PERIOD
 0
 20
-2.0
+4.0
 1
 1
 NIL
@@ -921,7 +896,7 @@ BIKE_PROBABILITY
 BIKE_PROBABILITY
 0
 1
-0.2993
+0.31
 0.01
 1
 NIL
@@ -951,7 +926,7 @@ MOTOR_SPEED_LIMIT
 MOTOR_SPEED_LIMIT
 0
 2.5
-0.85
+1.02
 0.01
 1
 NIL
@@ -1067,7 +1042,7 @@ TOO_CLOSE_THRESHOLD
 TOO_CLOSE_THRESHOLD
 0
 10
-2.62
+1.0
 0.01
 1
 NIL
@@ -1104,20 +1079,20 @@ These parameters don't need to be touched. They're mostly for viz (to make it se
 1
 
 TEXTBOX
-1212
-817
-1362
-843
+1204
+842
+1354
+868
 These parmeters control the lanes 
 10
 0.0
 1
 
 SLIDER
-1197
-861
-1369
-894
+1189
+886
+1361
+919
 LANE_WIDTH
 LANE_WIDTH
 0
@@ -1129,10 +1104,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1196
-900
-1368
-933
+1188
+925
+1360
+958
 SPECIAL_LANES_TOP
 SPECIAL_LANES_TOP
 0
@@ -1144,10 +1119,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1193
-982
-1367
-1015
+1185
+1007
+1359
+1040
 SPECIAL_LANES_BOTTOM
 SPECIAL_LANES_BOTTOM
 0
@@ -1159,25 +1134,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-1196
-943
-1368
-976
+1188
+968
+1360
+1001
 NUM_LANES
 NUM_LANES
 0
 10
-1.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1197
-697
-1416
-730
+1189
+722
+1408
+755
 LEFT_LANE_SWITCH_PRIORITY
 LEFT_LANE_SWITCH_PRIORITY
 0
@@ -1189,20 +1164,20 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-1208
-596
-1358
-687
+1200
+621
+1350
+712
 These parameters control overtaking behavior. Specifically, whether to prioritize overtaking to the left (top) lane, and whether to allow overtakes on special lanes or not 
 10
 0.0
 1
 
 SWITCH
-1198
-737
-1387
-770
+1190
+762
+1379
+795
 ALLOW_OVERTAKE_TOP?
 ALLOW_OVERTAKE_TOP?
 1
@@ -1210,10 +1185,10 @@ ALLOW_OVERTAKE_TOP?
 -1000
 
 SWITCH
-1201
-774
-1414
-807
+1193
+799
+1406
+832
 ALLOW_OVERTAKE_BOTTOM?
 ALLOW_OVERTAKE_BOTTOM?
 0
