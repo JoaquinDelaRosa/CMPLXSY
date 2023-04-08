@@ -3,6 +3,7 @@ globals [
    BUS_SIZE
    MOTOR_SIZE
    BIKE_SIZE
+   SPAWN_REGION
 ]
 
 breed [actors actor]
@@ -99,6 +100,7 @@ to setup-globals
   set BUS_SIZE 3
   set MOTOR_SIZE 1.5
   set BIKE_SIZE 1.25
+  set SPAWN_REGION 10
 end
 
 to configure-lanes
@@ -108,7 +110,7 @@ to configure-lanes
   ]
 
   let half_width LANE_WIDTH / 2
-  let lane_center max-pycor - LANE_WIDTH
+  let lane_center max-pycor - half_width
 
   ask patches with [pycor > lane_center + half_width] [set pcolor black]
 
@@ -144,14 +146,15 @@ to initialize-actors
 
    ; Initialize the probabilities
 
-   set pcar random-normal CAR_PROBABILITY 0.05
-   set pbus random-normal BUS_PROBABILITY 0.05
-   set pmotor random-normal MOTOR_PROBABILITY 0.05
-   set pbike random-normal BIKE_PROBABILITY 0.05
+   set pcar random-normal 1 2
+   set pbus random-normal 1 2
+   set pmotor random-normal 1 2
+   set pbike random-normal 1 2
 
    normalize-probabilities
    set fastest_trip -1
    set last_trip_time -1
+
 
    set alpha random-normal FASTEST_TIME_COEFF 0.1
    set beta random-normal LAST_TIME_COEFF 0.1
@@ -250,21 +253,22 @@ to spawn-car [l a]
    hatch-cars 1 [
     set shape "car"
     set color blue
-    set speed 1
-    set targety get-lane-center l
+    set speed 0
+    set size CAR_SIZE
+
+    set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
+    set targety clamp targety min-pycor max-pycor
     set ycor targety
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience min list impatience 1
-    set impatience max list impatience 0
+    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
 
-    set size CAR_SIZE
 
     set c self
    ]
@@ -281,22 +285,23 @@ to spawn-bus [l a]
    hatch-buses 1 [
     set shape "car"
     set color red
-    set speed 1
+    set speed 0
+    set size BUS_SIZE
 
-    set targety get-lane-center l
+    set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
+    set targety clamp targety min-pycor max-pycor
     set ycor targety
+
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience min list impatience 1
-    set impatience max list impatience 0
+    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
 
-    set size BUS_SIZE
 
     set c self
 
@@ -327,22 +332,21 @@ to spawn-motor [l a]
    hatch-motors 1 [
     set shape "car"
     set color green
-    set speed 1
+    set speed 0
+    set size MOTOR_SIZE
 
-    set targety get-lane-center l
+    set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
+    set targety clamp targety min-pycor max-pycor
     set ycor targety
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal (AVERAGE_IMPATIENCE + 0.25 )  0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience min list impatience 1
-    set impatience max list impatience 0
+    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
-
-    set size MOTOR_SIZE
 
     set c self
 
@@ -360,17 +364,18 @@ to spawn-bike [l a]
    hatch-bikes 1 [
     set shape "car"
     set color orange
-    set speed 1
+    set speed 0
+    set size BIKE_SIZE
 
-    set targety get-lane-center l
+    set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
+    set targety clamp targety min-pycor max-pycor
     set ycor targety
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
     set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience min list impatience 1
-    set impatience max list impatience 0
+    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
@@ -523,9 +528,9 @@ to adjust-speed [max_speed]
     ; Policy: Speed up when the car in front of you is far enough.
     let dist [distance myself] of adjacent - size - [size] of adjacent
 
-    if-else dist < TOO_CLOSE_THRESHOLD
+    if-else dist < TOO_CLOSE_THRESHOLD and xcor < SPAWN_REGION
     [
-      set speed 0
+      ; Note: We can allow the vehicles to be too close as long as they are in the spawn area.
     ]
     [
      set speed speed + 0.1 * dist
@@ -679,6 +684,15 @@ end
 to-report sigmoid [x a t0]
  report 1.0 / (1.0 + exp(- a * (x - t0)))
 end
+
+to-report clamp [x minimum maximum]
+  if-else x <= maximum
+  [ if-else x >= minimum
+    [ report x]
+    [report minimum ]
+  ]
+    [report maximum]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -761,7 +775,7 @@ AVERAGE_IMPATIENCE
 AVERAGE_IMPATIENCE
 0
 1
-0.36
+1.0
 0.01
 1
 NIL
@@ -858,21 +872,6 @@ NIL
 HORIZONTAL
 
 SLIDER
-406
-556
-578
-589
-BUS_PROBABILITY
-BUS_PROBABILITY
-0
-1
-0.4178
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
 601
 560
 773
@@ -941,7 +940,7 @@ BIKE_SPEED_LIMIT
 BIKE_SPEED_LIMIT
 0
 2.5
-0.18
+0.29
 0.01
 1
 NIL
@@ -1042,7 +1041,7 @@ TOO_CLOSE_THRESHOLD
 TOO_CLOSE_THRESHOLD
 0
 10
-1.0
+1.28
 0.01
 1
 NIL
@@ -1359,6 +1358,46 @@ BUS_OCCUPANCY_STDDEV
 20
 5.0
 1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+406
+556
+578
+589
+BUS_PROBABILITY
+BUS_PROBABILITY
+0
+1
+0.4178
+0.01
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+92
+560
+242
+586
+We might not use these Probabilities anymore
+10
+0.0
+1
+
+SLIDER
+17
+227
+189
+260
+LANE_SPREAD
+LANE_SPREAD
+0
+1
+0.34
+0.01
 1
 NIL
 HORIZONTAL
