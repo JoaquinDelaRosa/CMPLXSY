@@ -100,7 +100,7 @@ to setup-globals
   set BUS_SIZE 3
   set MOTOR_SIZE 1.5
   set BIKE_SIZE 1.25
-  set SPAWN_REGION 10
+  set SPAWN_REGION 5
 end
 
 to configure-lanes
@@ -253,7 +253,7 @@ to spawn-car [l a]
    hatch-cars 1 [
     set shape "car"
     set color blue
-    set speed 0
+    set speed random-float CAR_SPEED_LIMIT
     set size CAR_SIZE
 
     set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
@@ -285,7 +285,7 @@ to spawn-bus [l a]
    hatch-buses 1 [
     set shape "car"
     set color red
-    set speed 0
+    set speed random-float BUS_SPEED_LIMIT
     set size BUS_SIZE
 
     set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
@@ -332,7 +332,7 @@ to spawn-motor [l a]
    hatch-motors 1 [
     set shape "car"
     set color green
-    set speed 0
+    set speed random-float MOTOR_SPEED_LIMIT
     set size MOTOR_SIZE
 
     set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
@@ -364,7 +364,7 @@ to spawn-bike [l a]
    hatch-bikes 1 [
     set shape "car"
     set color orange
-    set speed 0
+    set speed random-float BIKE_SPEED_LIMIT
     set size BIKE_SIZE
 
     set targety get-lane-center l + LANE_SPREAD * (random-normal 0 size) + LANE_WIDTH / 2
@@ -521,20 +521,16 @@ to adjust-speed [max_speed]
     if-else adjacent = nobody
     [
     ; Policy: Speed up when no one is in front of you.
-      set speed min list (speed + random-float 0.01) max_speed
+      set speed min list (speed + random-float 0.05) max_speed
     ]
     [
     ; Policy: Slow down when there's a car close to you.
     ; Policy: Speed up when the car in front of you is far enough.
     let dist [distance myself] of adjacent - size - [size] of adjacent
 
-    if-else dist < TOO_CLOSE_THRESHOLD and xcor < SPAWN_REGION
-    [
-      ; Note: We can allow the vehicles to be too close as long as they are in the spawn area.
-    ]
-    [
-     set speed speed + 0.1 * dist
-    ]
+    if-else dist <= TOO_CLOSE_THRESHOLD
+    [set speed 0]
+    [set speed speed + 0.1 * ( dist)]
 
     ; Clamp the speed to be between [0, SPEED_LIMIT]
     set speed max list speed 0
@@ -544,9 +540,7 @@ to adjust-speed [max_speed]
 end
 
 to maneuver
-    ; Perform any switching as necessary. Note, only do this when you are at least 2 * CLOSENESS_THRESHOLD distance away from the left.
-    ; This is because, otherwise you will keep trying to switch
-    if xcor - min-pxcor >= 10  [
+    if xcor - min-pxcor >=  SPAWN_REGION [
       try-switch
     ]
 
@@ -568,9 +562,9 @@ to try-switch
       let p make-decision
       if-else p < decision [
         if-else [pycor] of adjacent < pycor [
-          set targety pycor + 1
+          set targety pycor + random size
         ] [
-          set targety pycor - 1
+          set targety pycor - random size
         ]
 
         ; Make sure to cap the ycor to be just on the road itself
@@ -790,7 +784,7 @@ CAR_SPEED_LIMIT
 CAR_SPEED_LIMIT
 0
 2.5
-0.99
+1.74
 0.01
 1
 NIL
@@ -820,7 +814,7 @@ TRAFFIC_DENSITY
 TRAFFIC_DENSITY
 0
 1
-0.55
+0.34
 0.01
 1
 NIL
@@ -865,7 +859,7 @@ MAX_BUS_CAPACITY
 MAX_BUS_CAPACITY
 1
 100
-15.0
+30.0
 1
 1
 NIL
@@ -940,7 +934,7 @@ BIKE_SPEED_LIMIT
 BIKE_SPEED_LIMIT
 0
 2.5
-0.29
+0.56
 0.01
 1
 NIL
@@ -1040,9 +1034,9 @@ SLIDER
 TOO_CLOSE_THRESHOLD
 TOO_CLOSE_THRESHOLD
 0
-10
-1.28
-0.01
+32
+1.0
+1
 1
 NIL
 HORIZONTAL
@@ -1246,7 +1240,7 @@ INPUTBOX
 1380
 362
 COMFORT_COEFF
-10.0
+2.0
 1
 0
 Number
