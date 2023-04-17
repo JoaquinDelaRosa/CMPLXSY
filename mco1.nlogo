@@ -4,6 +4,8 @@ globals [
    MOTOR_SIZE
    BIKE_SIZE
    SPAWN_REGION
+
+   BOTTOM_LANE_BOUNDARY_Y
 ]
 
 breed [actors actor]
@@ -115,7 +117,7 @@ to configure-lanes
   ask patches with [pycor > lane_center + half_width] [set pcolor black]
 
   let x 0
-  let total_lanes NUM_LANES + SPECIAL_LANES_TOP + SPECIAL_LANES_BOTTOM
+  let total_lanes NUM_LANES + SPECIAL_LANES_BOTTOM
   repeat total_lanes [
     ask patches with [pycor > lane_center - half_width and pycor < lane_center + half_width ] [
       set lane_no x
@@ -126,6 +128,10 @@ to configure-lanes
       ask patches with [pycor = floor (lane_center + half_width)] [
        set pcolor white
       ]
+    ]
+
+    if x = NUM_LANES [
+      set BOTTOM_LANE_BOUNDARY_Y lane_center - half_width
     ]
 
     ask patches with [pycor = ceiling (lane_center - half_width)] [
@@ -199,21 +205,6 @@ to spawn-from-lanes
     let x 0
 
     ; Tune this to determine the general lanes.
-
-     repeat SPECIAL_LANES_TOP [
-      ; Do lane spawning logic here. Includes the logic for which vehicle to spawn
-      ; Account for the traffic density
-      write "This ran"
-      let should_spawn make-decision
-      if should_spawn < TRAFFIC_DENSITY AND count actors with [available? = true] > 0 [
-        ask one-of actors with [available? = true] [
-          if choice = "bus"
-            [spawn-bus x self]
-        ]
-      ]
-      set x (x + 1)
-    ]
-
     repeat NUM_LANES [
       ; Do lane spawning logic here. Includes the logic for which vehicle to spawn
       ; Account for the traffic density
@@ -567,8 +558,11 @@ to try-switch
           set targety pycor - random size
         ]
 
+        if targety >= BOTTOM_LANE_BOUNDARY_Y and ALLOW_OVERTAKE_BOTTOM? = false
+        [ set targety pycor]
+
         ; Make sure to cap the ycor to be just on the road itself
-        let total_lanes NUM_LANES + SPECIAL_LANES_TOP + SPECIAL_LANES_BOTTOM
+        let total_lanes NUM_LANES + SPECIAL_LANES_BOTTOM
         let lower max-pycor + LANE_WIDTH / 2 - (total_lanes) * LANE_WIDTH + 1
         let upper max-pycor - LANE_WIDTH
 
@@ -1072,20 +1066,20 @@ These parameters don't need to be touched. They're mostly for viz (to make it se
 1
 
 TEXTBOX
-1204
-842
-1354
-868
+1201
+804
+1351
+830
 These parmeters control the lanes 
 10
 0.0
 1
 
 SLIDER
-1189
-886
-1361
-919
+1186
+848
+1358
+881
 LANE_WIDTH
 LANE_WIDTH
 0
@@ -1097,28 +1091,13 @@ NIL
 HORIZONTAL
 
 SLIDER
-1188
-925
-1360
-958
-SPECIAL_LANES_TOP
-SPECIAL_LANES_TOP
-0
-4
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-1185
-1007
-1359
-1040
+1184
+931
+1358
+964
 SPECIAL_LANES_BOTTOM
 SPECIAL_LANES_BOTTOM
-0
+1
 4
 1.0
 1
@@ -1127,10 +1106,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1188
-968
-1360
-1001
+1187
+892
+1359
+925
 NUM_LANES
 NUM_LANES
 0
@@ -1167,21 +1146,10 @@ These parameters control overtaking behavior. Specifically, whether to prioritiz
 1
 
 SWITCH
-1190
-762
-1379
-795
-ALLOW_OVERTAKE_TOP?
-ALLOW_OVERTAKE_TOP?
-1
-1
--1000
-
-SWITCH
-1193
-799
-1406
-832
+1192
+771
+1405
+804
 ALLOW_OVERTAKE_BOTTOM?
 ALLOW_OVERTAKE_BOTTOM?
 0
