@@ -48,7 +48,6 @@ cars-own [
   speed   ; the current speed of this vehicle
   targety ; the current target ycoord of this vehicle
   lane    ; the current lane this car is traversing
-  impatience; a probability that determines if they switch lanes
   impatience_threshold ; the threshld for triggering the impatience mechanics
   delta_impatience ; the last time an impatience check was not run
   jam_time ; the time this vehicle was jammed
@@ -58,7 +57,6 @@ cars-own [
 buses-own [
   speed
   targety
-  impatience
   impatience_threshold
   delta_impatience
   jam_time
@@ -68,7 +66,6 @@ buses-own [
 motors-own [
   speed
   targety
-  impatience
   impatience_threshold
   delta_impatience
   jam_time
@@ -78,7 +75,6 @@ motors-own [
 bikes-own [
   speed
   targety
-  impatience
   impatience_threshold
   delta_impatience
   jam_time
@@ -257,9 +253,6 @@ to spawn-car [l a]
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
-    set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience clamp impatience 0 1
-
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
 
@@ -289,9 +282,6 @@ to spawn-bus [l a]
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
-
-    set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
@@ -336,9 +326,6 @@ to spawn-motor [l a]
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
 
-    set impatience random-normal (AVERAGE_IMPATIENCE + 0.25 )  0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience clamp impatience 0 1
-
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
 
@@ -367,9 +354,6 @@ to spawn-bike [l a]
 
     set xcor min-pxcor + random 10   ; This makes it so there's a bit of interleaving.
     set heading 90    ; This makes the cars face right
-
-    set impatience random-normal AVERAGE_IMPATIENCE 0.1 ; Set impatience. Have a stddev of 0.1
-    set impatience clamp impatience 0 1
 
     set impatience_threshold random-normal AVERAGE_IMPATIENCE_THRESHOLD IMPATIENCE_THRESHOLD_STD_DEV
     set delta_impatience ticks
@@ -747,30 +731,15 @@ NIL
 1
 
 INPUTBOX
-809
-399
-859
-459
+617
+378
+667
+438
 N
 200.0
 1
 0
 Number
-
-SLIDER
-1033
-451
-1222
-484
-AVERAGE_IMPATIENCE
-AVERAGE_IMPATIENCE
-0
-1
-1.0
-0.01
-1
-NIL
-HORIZONTAL
 
 SLIDER
 216
@@ -788,21 +757,6 @@ NIL
 HORIZONTAL
 
 SLIDER
-1025
-570
-1283
-603
-CLOSENESS_IMPATIENCE_THRESHOLD
-CLOSENESS_IMPATIENCE_THRESHOLD
-0
-10
-2.1
-0.1
-1
-NIL
-HORIZONTAL
-
-SLIDER
 14
 334
 186
@@ -811,7 +765,7 @@ TRAFFIC_DENSITY
 TRAFFIC_DENSITY
 0
 1
-0.34
+0.71
 0.01
 1
 NIL
@@ -914,42 +868,42 @@ PENS
 "bikes" 1.0 0 -4079321 true "" "plot count actors with [choice = \"bike\"]"
 
 INPUTBOX
-1225
-79
-1380
-139
+1134
+71
+1289
+131
 FASTEST_TIME_COEFF
-0.0
+1.0
 1
 0
 Number
 
 INPUTBOX
-1225
-155
-1380
-215
+1134
+147
+1289
+207
 LAST_TIME_COEFF
-0.0
+1.0
 1
 0
 Number
 
 TEXTBOX
-1217
-22
-1492
-113
+1126
+14
+1401
+105
 These control the hyperparameters of each actor. These are average values instead, so the actual value per actor may be slightly different
 10
 0.0
 1
 
 INPUTBOX
-1034
-504
-1189
-564
+1019
+463
+1174
+523
 AVERAGE_IMPATIENCE_THRESHOLD
 500.0
 1
@@ -957,9 +911,9 @@ AVERAGE_IMPATIENCE_THRESHOLD
 Number
 
 INPUTBOX
-1251
+1281
 446
-1406
+1436
 506
 IMPATIENCE_THRESHOLD_STD_DEV
 100.0
@@ -968,9 +922,9 @@ IMPATIENCE_THRESHOLD_STD_DEV
 Number
 
 INPUTBOX
-1254
+1284
 516
-1409
+1439
 576
 IMPATIENCE_THRESHOLD_DEGREE
 1.0E-4
@@ -1024,20 +978,20 @@ These parameters don't need to be touched. They're mostly for viz (to make it se
 1
 
 TEXTBOX
-1201
-804
-1351
-830
+1312
+247
+1462
+273
 These parmeters control the lanes 
 10
 0.0
 1
 
 SLIDER
-1186
-848
-1358
-881
+1297
+291
+1469
+324
 LANE_WIDTH
 LANE_WIDTH
 0
@@ -1049,10 +1003,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1184
-931
-1358
-964
+1295
+374
+1469
+407
 SPECIAL_LANES_BOTTOM
 SPECIAL_LANES_BOTTOM
 1
@@ -1064,10 +1018,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1187
-892
-1359
-925
+1298
+335
+1470
+368
 NUM_LANES
 NUM_LANES
 0
@@ -1079,10 +1033,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-1189
-722
-1408
-755
+1300
+165
+1519
+198
 LEFT_LANE_SWITCH_PRIORITY
 LEFT_LANE_SWITCH_PRIORITY
 0
@@ -1094,42 +1048,42 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-1200
-621
-1350
-712
+1311
+64
+1461
+155
 These parameters control overtaking behavior. Specifically, whether to prioritize overtaking to the left (top) lane, and whether to allow overtakes on special lanes or not 
 10
 0.0
 1
 
 SWITCH
-1192
-771
-1405
-804
+1303
+214
+1516
+247
 ALLOW_OVERTAKE_BOTTOM?
 ALLOW_OVERTAKE_BOTTOM?
-0
+1
 1
 -1000
 
 INPUTBOX
-1224
-228
-1379
-288
+1133
+220
+1288
+280
 JAMMING_TIME_COEFF
-0.0
+1.0
 1
 0
 Number
 
 SLIDER
-206
-610
-427
-643
+608
+449
+829
+482
 JAM_THRESHOLD_COEFFICIENT
 JAM_THRESHOLD_COEFFICIENT
 0
@@ -1161,12 +1115,12 @@ PENS
 "last time" 1.0 0 -14454117 true "" "plot mean [last_trip_time] of actors"
 
 INPUTBOX
-1225
-302
-1380
-362
+1134
+294
+1289
+354
 COMFORT_COEFF
-0.0
+1.0
 1
 0
 Number
@@ -1232,10 +1186,10 @@ NIL
 HORIZONTAL
 
 PLOT
-789
-717
-1156
-1015
+797
+714
+1164
+1012
 Probability Plots
 NIL
 NIL
@@ -1253,15 +1207,15 @@ PENS
 "pbike" 1.0 0 -987046 true "" "plot mean [pbike] of actors"
 
 SLIDER
-1230
-372
-1402
-405
+1110
+360
+1282
+393
 ETA
 ETA
 0
 1
-0.05
+0.23
 0.01
 1
 NIL
@@ -1317,6 +1271,21 @@ NUMBER_TICKS
 1
 0
 Number
+
+SLIDER
+1010
+529
+1268
+562
+CLOSENESS_IMPATIENCE_THRESHOLD
+CLOSENESS_IMPATIENCE_THRESHOLD
+0
+10
+2.1
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
